@@ -36,7 +36,9 @@ import { RolesGuard } from './auth/guards/roles.guard';
     ConfigModule.forRoot({
       isGlobal: true,
       expandVariables: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      // Load .env.development locally; on Render (production) only env vars are needed
+      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       load: [configuration],
       validationSchema: Joi.object({
         NODE_ENV: Joi.string()
@@ -45,7 +47,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
         PORT: Joi.number().default(3000),
         DATABASE_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
-        CLOUDINARY_URL: Joi.string().required(),
+        CLOUDINARY_URL: Joi.string().optional(),
       }),
     }),
 
