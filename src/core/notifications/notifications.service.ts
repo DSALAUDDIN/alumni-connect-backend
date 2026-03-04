@@ -49,6 +49,7 @@ export class NotificationsService {
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT) || 587,
             secure: false,
+            family: 4, // Forces IPv4 to avoid ENETUNREACH errors
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
