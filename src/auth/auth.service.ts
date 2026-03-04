@@ -2,6 +2,7 @@ import { Injectable, ConflictException, UnauthorizedException, InternalServerErr
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../core/prisma/prisma.service';
 import { JwtPayload } from './jwt.strategy';
+import { NotificationsService } from '../core/notifications/notifications.service';
 import * as bcrypt from 'bcrypt';
 import * as admin from 'firebase-admin';
 import { RegisterDto, LoginDto, FirebaseAuthDto, LogoutDto, SendOtpDto, VerifyOtpDto, ForgotPasswordDto, ResetPasswordDto, SubmitVerificationDto } from './dto/auth.dto';
@@ -26,6 +27,7 @@ export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
+        private readonly notificationsService: NotificationsService,
     ) { }
 
     async register(dto: RegisterDto) {
@@ -73,8 +75,18 @@ export class AuthService {
             },
         });
 
-        // TODO: Send real email with OTP via nodemailer/Resend
-        console.log(`[DEV] Registration OTP for ${dto.email}: ${otpCode}`);
+        // Send real email with OTP
+        await this.notificationsService.sendEmail({
+            to: dto.email,
+            subject: 'Verify your Email - Alumni Connect',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2>Welcome to Alumni Connect!</h2>
+                    <p>Your OTP code for registration is: <strong>${otpCode}</strong></p>
+                    <p>This code will expire in 10 minutes.</p>
+                </div>
+            `,
+        });
 
         return { message: 'Account created! Please check your email for the OTP verification code.' };
     }
@@ -154,8 +166,18 @@ export class AuthService {
             });
         }
 
-        // TODO: Replace this with real Email-sending logic using nodemailer/SendGrid etc.
-        console.log(`[DEV MODE] OTP for ${dto.email} is: ${otpCode}`);
+        // Send real email with OTP
+        await this.notificationsService.sendEmail({
+            to: dto.email,
+            subject: 'Your Login OTP - Alumni Connect',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2>Login to Alumni Connect</h2>
+                    <p>Your OTP code is: <strong>${otpCode}</strong></p>
+                    <p>This code will expire in 10 minutes.</p>
+                </div>
+            `,
+        });
 
         return { message: 'OTP sent successfully to your email' };
     }
@@ -231,8 +253,18 @@ export class AuthService {
             data: { otpCode, otpExpiry },
         });
 
-        // TODO: Call email sender here
-        console.log(`[DEV MODE] Forgot Password OTP for ${dto.email} is: ${otpCode}`);
+        // Send real email with OTP
+        await this.notificationsService.sendEmail({
+            to: dto.email,
+            subject: 'Reset your Password - Alumni Connect',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2>Password Reset Request</h2>
+                    <p>You requested a password reset. Use this OTP code to proceed: <strong>${otpCode}</strong></p>
+                    <p>This code will expire in 10 minutes.</p>
+                </div>
+            `,
+        });
 
         return { message: 'If that email address is in our database, we will send you an email to reset your password.' };
     }
