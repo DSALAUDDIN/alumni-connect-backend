@@ -109,24 +109,30 @@ export class NotificationsService {
    */
   async sendEmail(payload: EmailPayload): Promise<void> {
     try {
-      // Note: Resend requires a verified domain to send from custom addresses.
-      // Defaulting to onboarding@resend.dev if needed, but using your configured 'from'.
       const fromEmail = process.env.RESEND_FROM || 'onboarding@resend.dev';
       const fromName = '"Alumni Connect"';
 
-      await this.resend.emails.send({
+      this.logger.log(`Attempting to send email via Resend to ${payload.to} from ${fromEmail}`);
+
+      const response = await this.resend.emails.send({
         from: `${fromName} <${fromEmail}>`,
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
         attachments: payload.attachments?.map(att => ({
           filename: att.filename,
-          content: att.content || att.path, // Resend supports path/content
+          content: att.content || att.path,
         })) || [],
       });
-      this.logger.log(`Email sent via Resend to: ${payload.to}`);
+
+      if (response.error) {
+        this.logger.error(`Resend API Error: ${response.error.name} - ${response.error.message}`);
+      } else {
+        this.logger.log(`Email successfully queued in Resend. ID: ${response.data?.id}`);
+      }
     } catch (error) {
-      this.logger.error(`Failed to send email via Resend: ${error.message}`);
+      this.logger.error(`Fatal exception in sendEmail: ${error.message}`);
+      if (error.stack) this.logger.debug(error.stack);
     }
   }
 
