@@ -109,7 +109,7 @@ export class NotificationsService {
    */
   async sendEmail(payload: EmailPayload): Promise<void> {
     try {
-      const fromEmail = process.env.RESEND_FROM || 'onboarding@resend.dev';
+      const fromEmail = process.env.RESEND_FROM || 'hi@zitra.org';
       const fromName = '"Alumni Connect"';
 
       this.logger.log(`Attempting to send email via Resend to ${payload.to} from ${fromEmail}`);
