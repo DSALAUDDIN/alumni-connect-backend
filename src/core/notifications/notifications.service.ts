@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Resend } from 'resend';
+import * as fs from 'fs';
 
 export interface PushPayload {
   title: string;
@@ -119,10 +120,24 @@ export class NotificationsService {
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
-        attachments: payload.attachments?.map(att => ({
-          filename: att.filename,
-          content: att.content || att.path,
-        })) || [],
+        attachments: payload.attachments?.map(att => {
+          const attachment: any = {
+            filename: att.filename,
+          };
+
+          if (att.cid) attachment.cid = att.cid;
+
+          if (att.content) {
+            attachment.content = att.content;
+          } else if (att.path) {
+            // Resend SDK requires the content as Buffer or string for attachments when using internal paths
+            if (fs.existsSync(att.path)) {
+              attachment.content = fs.readFileSync(att.path);
+            }
+          }
+
+          return attachment;
+        }) || [],
       });
 
       if (response.error) {
