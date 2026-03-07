@@ -18,11 +18,12 @@ async function sendMail() {
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT) || 587,
         secure: false,
+        family: 4, // Prevents ENETUNREACH in environments without IPv6 support
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
         },
-    });
+    } as any);
 
     const otpCode = generateOtp();
 
