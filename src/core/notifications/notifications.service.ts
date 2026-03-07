@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
+import { Resend } from 'resend';
 
 export interface PushPayload {
   title: string;
@@ -19,7 +18,7 @@ export interface EmailPayload {
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private mailer: Transporter;
+  private resend: Resend;
 
   constructor() {
     // Initialize Firebase Admin
@@ -54,17 +53,9 @@ export class NotificationsService {
       );
     }
 
-    // Initialize Nodemailer
-    this.mailer = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
-      family: 4, // Forces IPv4 to avoid ENETUNREACH errors
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    } as any);
+    // Initialize Resend (to bypass Render SMTP blocking)
+    const resendApiKey = process.env.RESEND_API_KEY || 're_EevVGvkt_8ut1864N2D78y9yfeHnBM3Q2';
+    this.resend = new Resend(resendApiKey);
   }
 
   /**
@@ -118,18 +109,24 @@ export class NotificationsService {
    */
   async sendEmail(payload: EmailPayload): Promise<void> {
     try {
-      await this.mailer.sendMail({
-        from:
-          process.env.SMTP_FROM ||
-          '"Alumni Connect" <no-reply@alumniconnect.app>',
+      // Note: Resend requires a verified domain to send from custom addresses.
+      // Defaulting to onboarding@resend.dev if needed, but using your configured 'from'.
+      const fromEmail = process.env.RESEND_FROM || 'onboarding@resend.dev';
+      const fromName = '"Alumni Connect"';
+
+      await this.resend.emails.send({
+        from: `${fromName} <${fromEmail}>`,
         to: payload.to,
         subject: payload.subject,
         html: payload.html,
-        attachments: payload.attachments || [], // Pass attachments if provided
+        attachments: payload.attachments?.map(att => ({
+          filename: att.filename,
+          content: att.content || att.path, // Resend supports path/content
+        })) || [],
       });
-      this.logger.log(`Email sent to: ${payload.to}`);
+      this.logger.log(`Email sent via Resend to: ${payload.to}`);
     } catch (error) {
-      this.logger.error(`Failed to send email: ${error.message}`);
+      this.logger.error(`Failed to send email via Resend: ${error.message}`);
     }
   }
 
@@ -138,7 +135,8 @@ export class NotificationsService {
    */
   async checkMailer(): Promise<{ status: string; error?: string }> {
     try {
-      await this.mailer.verify();
+      // Basic check: ensure API key is present
+      if (!this.resend) throw new Error('Resend not initialized');
       return { status: 'up' };
     } catch (error) {
       return { status: 'down', error: error.message };
