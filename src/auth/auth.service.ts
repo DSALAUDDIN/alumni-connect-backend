@@ -221,7 +221,7 @@ export class AuthService {
                         <tr>
                             <td style="background: ${THEME_COLOR}; padding: 24px 0; text-align: center;">
                                 <span style="display: inline-block; background: #fff; border-radius: 50%; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1.5px solid #eee;">
-                                    <img src="cid:${LOGO_CID}" alt="Alumni Connect" style="height: 44px; display: block;">
+                                    <img src="cid:${LOGO_CID}" alt="Alumni Connect" style="height: 100px; display: block;">
                                 </span>
                             </td>
                         </tr>
