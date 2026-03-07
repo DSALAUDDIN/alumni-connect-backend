@@ -1,8 +1,8 @@
 import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-  InternalServerErrorException,
+    Injectable,
+    ConflictException,
+    UnauthorizedException,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../core/prisma/prisma.service';
@@ -12,15 +12,15 @@ import * as bcrypt from 'bcrypt';
 import * as admin from 'firebase-admin';
 import * as path from 'path';
 import {
-  RegisterDto,
-  LoginDto,
-  FirebaseAuthDto,
-  LogoutDto,
-  SendOtpDto,
-  VerifyOtpDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  SubmitVerificationDto,
+    RegisterDto,
+    LoginDto,
+    FirebaseAuthDto,
+    LogoutDto,
+    SendOtpDto,
+    VerifyOtpDto,
+    ForgotPasswordDto,
+    ResetPasswordDto,
+    SubmitVerificationDto,
 } from './dto/auth.dto';
 
 const SAFE_USER_SELECT = {
@@ -44,7 +44,7 @@ export class AuthService {
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly notificationsService: NotificationsService,
-    ) {}
+    ) { }
 
     async register(dto: RegisterDto) {
         const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -101,7 +101,7 @@ export class AuthService {
                         <tr>
                             <td style="background: ${THEME_COLOR}; padding: 24px 0; text-align: center;">
                                 <span style="display: inline-block; background: #fff; border-radius: 50%; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1.5px solid #eee;">
-                                    <img src="cid:${LOGO_CID}" alt="Alumni Connect" style="height: 44px; display: block;">
+                                    <img src="cid:${LOGO_CID}" alt="Alumni Connect" style="height: 100px; display: block;">
                                 </span>
                             </td>
                         </tr>
