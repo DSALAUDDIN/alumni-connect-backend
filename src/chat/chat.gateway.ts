@@ -14,10 +14,10 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../core/prisma/prisma.service';
 import { RedisService } from '../core/redis/redis.service';
+import type { SendMessagePayload } from './chat.types';
 import {
     ClientToServerEvents,
     ServerToClientEvents,
-    SendMessagePayload,
     MessagePayload,
 } from './chat.types';
 

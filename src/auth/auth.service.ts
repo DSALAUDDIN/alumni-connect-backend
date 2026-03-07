@@ -1,11 +1,27 @@
-import { Injectable, ConflictException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../core/prisma/prisma.service';
 import { JwtPayload } from './jwt.strategy';
 import { NotificationsService } from '../core/notifications/notifications.service';
 import * as bcrypt from 'bcrypt';
 import * as admin from 'firebase-admin';
-import { RegisterDto, LoginDto, FirebaseAuthDto, LogoutDto, SendOtpDto, VerifyOtpDto, ForgotPasswordDto, ResetPasswordDto, SubmitVerificationDto } from './dto/auth.dto';
+import * as path from 'path';
+import {
+  RegisterDto,
+  LoginDto,
+  FirebaseAuthDto,
+  LogoutDto,
+  SendOtpDto,
+  VerifyOtpDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  SubmitVerificationDto,
+} from './dto/auth.dto';
 
 const SAFE_USER_SELECT = {
     id: true,
@@ -28,22 +44,19 @@ export class AuthService {
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly notificationsService: NotificationsService,
-    ) { }
+    ) {}
 
     async register(dto: RegisterDto) {
         const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
         if (existing) throw new ConflictException('An account with this email already exists');
-
         // Check phone duplicate if provided
         if (dto.phone) {
             const existingPhone = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
             if (existingPhone) throw new ConflictException('An account with this phone number already exists');
         }
-
         const passwordHash = await bcrypt.hash(dto.password, 12);
         const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
         await this.prisma.user.create({
             data: {
                 email: dto.email,
@@ -74,20 +87,48 @@ export class AuthService {
                 isEmailVerified: false,
             },
         });
-
-        // Send real email with OTP
+        // Send real email with OTP (crimson theme, inline logo)
+        const LOGO_CID = 'alumni-logo';
+        const THEME_COLOR = '#DC143C';
+        // Always resolve from project root, not dist
+        const LOGO_PATH = path.resolve(process.cwd(), 'assets/logo.png');
         await this.notificationsService.sendEmail({
             to: dto.email,
             subject: 'Verify your Email - Alumni Connect',
             html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2>Welcome to Alumni Connect!</h2>
-                    <p>Your OTP code for registration is: <strong>${otpCode}</strong></p>
-                    <p>This code will expire in 10 minutes.</p>
+                <div style="font-family: Arial, sans-serif; background: #f4f6fb; padding: 0; margin: 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+                        <tr>
+                            <td style="background: ${THEME_COLOR}; padding: 24px 0; text-align: center;">
+                                <span style="display: inline-block; background: #fff; border-radius: 50%; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1.5px solid #eee;">
+                                    <img src="cid:${LOGO_CID}" alt="Alumni Connect" style="height: 44px; display: block;">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 32px 24px 24px 24px; text-align: center;">
+                                <h2 style="color: ${THEME_COLOR}; margin-bottom: 16px;">Welcome to Alumni Connect!</h2>
+                                <p style="font-size: 16px; color: #222; margin-bottom: 24px;">Your OTP code for registration is:</p>
+                                <div style="font-size: 32px; font-weight: bold; color: ${THEME_COLOR}; letter-spacing: 4px; margin-bottom: 24px;">${otpCode}</div>
+                                <p style="font-size: 14px; color: #555;">This code will expire in 10 minutes.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background: #f4f6fb; padding: 16px 24px; text-align: center; color: #888; font-size: 12px;">
+                                &copy; ${new Date().getFullYear()} Alumni Connect. All rights reserved.
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             `,
+            attachments: [
+                {
+                    filename: 'logo.png',
+                    path: LOGO_PATH,
+                    cid: LOGO_CID,
+                },
+            ],
         });
-
         return { message: 'Account created! Please check your email for the OTP verification code.' };
     }
 
@@ -166,17 +207,47 @@ export class AuthService {
             });
         }
 
-        // Send real email with OTP
+        // Send real email with OTP (crimson theme, inline logo)
+        const LOGO_CID = 'alumni-logo';
+        const THEME_COLOR = '#DC143C';
+        // Always resolve from project root, not dist
+        const LOGO_PATH = path.resolve(process.cwd(), 'assets/logo.png');
         await this.notificationsService.sendEmail({
             to: dto.email,
             subject: 'Your Login OTP - Alumni Connect',
             html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2>Login to Alumni Connect</h2>
-                    <p>Your OTP code is: <strong>${otpCode}</strong></p>
-                    <p>This code will expire in 10 minutes.</p>
+                <div style="font-family: Arial, sans-serif; background: #f4f6fb; padding: 0; margin: 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+                        <tr>
+                            <td style="background: ${THEME_COLOR}; padding: 24px 0; text-align: center;">
+                                <span style="display: inline-block; background: #fff; border-radius: 50%; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1.5px solid #eee;">
+                                    <img src="cid:${LOGO_CID}" alt="Alumni Connect" style="height: 44px; display: block;">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 32px 24px 24px 24px; text-align: center;">
+                                <h2 style="color: ${THEME_COLOR}; margin-bottom: 16px;">Login to Alumni Connect</h2>
+                                <p style="font-size: 16px; color: #222; margin-bottom: 24px;">Your OTP code is:</p>
+                                <div style="font-size: 32px; font-weight: bold; color: ${THEME_COLOR}; letter-spacing: 4px; margin-bottom: 24px;">${otpCode}</div>
+                                <p style="font-size: 14px; color: #555;">This code will expire in 10 minutes.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background: #f4f6fb; padding: 16px 24px; text-align: center; color: #888; font-size: 12px;">
+                                &copy; ${new Date().getFullYear()} Alumni Connect. All rights reserved.
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             `,
+            attachments: [
+                {
+                    filename: 'logo.png',
+                    path: LOGO_PATH,
+                    cid: LOGO_CID,
+                },
+            ],
         });
 
         return { message: 'OTP sent successfully to your email' };
